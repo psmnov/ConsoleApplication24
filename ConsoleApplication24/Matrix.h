@@ -1,7 +1,8 @@
 #include <vector>
+#include <iostream>
+
 template <typename T>
-class Matrix
-{
+class Matrix {
 	std::vector<std::vector<T>> matrix;
 	void createMatrix() {
 		size_t mxSize = 0;
@@ -14,113 +15,99 @@ class Matrix
 			row.resize(mxSize);
 		}
 	}
-	
 public:
-	//const если функция не изменяет объект, а только читает
-	size_t getNumOfRows() const {
-		return matrix.size();
-	};
-	size_t getNumOfColumns() const {
-		if (matrix.empty()) return 0;
-		return matrix[0].size();
-	};
-	//& - передача ссылки,а не указателя, объект не копируется. Мы передаем ровно сам массив, не копируем и не указываем
+
+
 	Matrix(const std::vector<std::vector<T>>& m) : matrix(m) {
 		createMatrix();
 	}
-	//для инициализации матрицы из нулей
 	Matrix(size_t rows, size_t columns) {
 		matrix.resize(rows);
 		for (auto& row : matrix) {
 			row.resize(columns);
 		}
 	}
-	//перегрузка на два случая
-	//если получаем константную матрицу, то и изменять ее размеры не можем
-	const std::vector<T>& operator [] (size_t i) const {
-		return matrix[i];
-	}
-	//для работы с неконстантными матрицами
-	std::vector<T>& operator [] (size_t i) {
-		return matrix[i];
-	}
-	template <typename T>
-	std::ostream& operator << (std::ostream& out, const Matrix<T>& matrix) {
-		const size_t rows = matrix.GetRows();
-		const size_t columns = matrix.GetColumns();
-		for (size_t i = 0; i != rows; ++i) {
-			for (size_t j = 0; j != columns; ++j) {
-				if (j > 0) {
-					out << "\t";
-				}
-				out << matrix[i][j];
-			}
-			out << "\n";
-		}
-		return out;
+
+	// Получение количества строк
+
+	size_t GetRows() const {
+		return matrix.size();
 	}
 
-	template <typename T>
-	std::istream& operator >> (std::istream& in, Matrix<T>& matrix) {
-		const size_t rows = matrix.GetRows();
-		const size_t columns = matrix.GetColumns();
-		for (size_t i = 0; i != rows; ++i) {
-			for (size_t j = 0; j != columns; ++j) {
-				in >> matrix(i, j);
-			}
+	// Получение количества столбцов
+	size_t GetColumns() const {
+		if (matrix.empty()) {
+			return 0;
 		}
-		return in;
+		return matrix[0].size();
 	}
-	Matrix<T>& operator += (const Matrix<T>& other) {
-		const size_t rows = GetRows();
-		const size_t columns = GetColumns();
-		if (rows != other.GetRows() || columns != other.GetColumns()) {
+	// Перегрузка оператора [] для доступа к элементам (константная версия)
+	const std::vector<T>& operator[](size_t i) const {
+		return matrix[i];
+	}
+
+	// Перегрузка оператора [] для доступа к элементам (неконстантная версия)
+	std::vector<T>& operator[](size_t i) {
+		return matrix[i];
+	}
+
+	
+
+	// Перегрузка оператора += для сложения матриц
+	Matrix<T>& operator+=(const Matrix<T>& other) {
+		if (GetRows() != other.GetRows() || GetColumns() != other.GetColumns()) {
 			throw std::invalid_argument("Matrices have different size!");
 		}
-		for (size_t i = 0; i != rows; ++i) {
-			for (size_t j = 0; j != columns; ++j) {
-				data[i][j] += other.data[i][j];
+		for (size_t i = 0; i < GetRows(); ++i) {
+			for (size_t j = 0; j < GetColumns(); ++j) {
+				matrix[i][j] += other[i][j];
 			}
 		}
 		return *this;
 	}
-	template <typename T>
-	Matrix<T> operator + (const Matrix<T>& m1, const Matrix<T>& m2) {
-		auto tmp = m1;
-		tmp += m2;
-		return tmp;
+
+	// Перегрузка оператора + для сложения матриц
+	Matrix<T> operator+(const Matrix<T>& other) const {
+		Matrix<T> result = *this; // Создаем копию *this
+		result += other; // Используем operator+= для сложения
+		return result;
 	}
-	template <typename T>
+
+	// Умножение матрицы на число
 	Matrix<T>& scale(const T& t) {
-		const size_t rows = GetRows();
-		const size_t columns = GetColumns();
-		for (size_t i = 0; i != rows; ++i) {
-			for (size_t j = 0; j != columns; ++j) {
+		for (size_t i = 0; i < GetRows(); ++i) {
+			for (size_t j = 0; j < GetColumns(); ++j) {
 				matrix[i][j] *= t;
 			}
 		}
 		return *this;
 	}
-	template <typename T>
-	Matrix<T>& operator -= (const Matrix<T>& other) {
-		Matrix<T> temp = other;
-		temp.scale(-1);
-		*this += temp;
 
+
+	Matrix<T>& operator-=(const Matrix<T>& other) {
+		if (GetRows() != other.GetRows() || GetColumns() != other.GetColumns()) {
+			throw std::invalid_argument("Matrices have different size!");
+		}
+		for (size_t i = 0; i < GetRows(); ++i) {
+			for (size_t j = 0; j < GetColumns(); ++j) {
+				matrix[i][j] -= other[i][j];
+			}
+		}
 		return *this;
 	}
-	template <typename T>
-	Matrix<T>& operator - (const Matrix<T>& other) {
-		auto tmp = m1;
-		tmp -= m2;
-		return tmp;
+
+
+	Matrix<T> operator-(const Matrix<T>& other) const {
+		Matrix<T> result = *this; // Создаем копию *this
+		result -= other; // Используем operator-= для вычитания
+		return result;
 	}
-	template <typename T>
-	Matrix<T> operator*(const Matrix<T>& lhs, const Matrix<T>& rhs) {
-		const size_t lhsRows = lhs.GetRows();
-		const size_t lhsCols = lhs.GetColumns();
-		const size_t rhsRows = rhs.GetRows();
-		const size_t rhsCols = rhs.GetColumns();
+
+	Matrix<T> operator*(const Matrix<T>& other) const {
+		const size_t lhsRows = GetRows();
+		const size_t lhsCols = GetColumns();
+		const size_t rhsRows = other.GetRows();
+		const size_t rhsCols = other.GetColumns();
 
 		if (lhsCols != rhsRows) {
 			throw std::invalid_argument("Incompatible matrix dimensions for multiplication!");
@@ -131,13 +118,42 @@ public:
 		for (size_t i = 0; i < lhsRows; ++i) {
 			for (size_t j = 0; j < rhsCols; ++j) {
 				for (size_t k = 0; k < lhsCols; ++k) {
-					result[i][j] += lhs[i][k] * rhs[k][j];
+					result[i][j] += matrix[i][k] * other[k][j];
 				}
 			}
 		}
 
 		return result;
 	}
+
+
+	Matrix<T> operator*(const T& scalar) const {
+		Matrix<T> result = *this;
+		result.scale(scalar);
+		return result;
+	}
 };
-
-
+template <typename T>
+// Перегрузка оператора << для вывода матрицы в поток
+std::ostream& operator<<(std::ostream& out, const Matrix<T>& mat) {
+	for (size_t i = 0; i < mat.GetRows(); ++i) {
+		for (size_t j = 0; j < mat.GetColumns(); ++j) {
+			if (j > 0) {
+				out << "\t";
+			}
+			out << mat[i][j];
+		}
+		out << "\n";
+	}
+	return out;
+}
+template <typename T>
+// Перегрузка оператора >> для ввода матрицы из потока
+std::istream& operator>>(std::istream& in, Matrix<T>& mat) {
+	for (size_t i = 0; i < mat.GetRows(); ++i) {
+		for (size_t j = 0; j < mat.GetColumns(); ++j) {
+			in >> mat[i][j];
+		}
+	}
+	return in;
+}
